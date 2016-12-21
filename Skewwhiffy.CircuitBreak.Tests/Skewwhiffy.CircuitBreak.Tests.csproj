@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B90740F7-9BF0-4A8D-AD97-55560C690AA4}</ProjectGuid>
+    <ProjectGuid>{DB36F507-5171-4723-8B84-A3A4A0D4A6C8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Skewwhiffy.CircuitBreak</RootNamespace>
-    <AssemblyName>Skewwhiffy.CircuitBreak</AssemblyName>
+    <RootNamespace>Skewwhiffy.CircuitBreak.Tests</RootNamespace>
+    <AssemblyName>Skewwhiffy.CircuitBreak.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -31,6 +31,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="nunit.framework, Version=3.5.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -41,9 +45,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CircuitBreakPolicy.cs" />
-    <Compile Include="CircuitBreakPolicyExecutor.cs" />
+    <Compile Include="CircuitBreakPolicyExecutorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Skewwhiffy.CircuitBreak\Skewwhiffy.CircuitBreak.csproj">
+      <Project>{b90740f7-9bf0-4a8d-ad97-55560c690aa4}</Project>
+      <Name>Skewwhiffy.CircuitBreak</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
