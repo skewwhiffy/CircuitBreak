@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Skewwhiffy.CircuitBreak
+namespace Skewwhiffy.CircuitBreak.Methods
 {
     public static class TimeoutTaskCollectionInstantiator
     {

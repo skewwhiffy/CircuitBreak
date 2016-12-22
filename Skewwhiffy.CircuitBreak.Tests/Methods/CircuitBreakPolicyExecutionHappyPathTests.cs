@@ -3,8 +3,9 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using Skewwhiffy.CircuitBreak.Methods;
 
-namespace Skewwhiffy.CircuitBreak.Tests
+namespace Skewwhiffy.CircuitBreak.Tests.Methods
 {
     public class CircuitBreakPolicyExecutionHappyPathTests
     {
