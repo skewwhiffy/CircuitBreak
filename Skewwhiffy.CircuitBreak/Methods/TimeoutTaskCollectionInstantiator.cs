@@ -12,6 +12,12 @@ namespace Skewwhiffy.CircuitBreak.Methods
         {
             return new TimeoutTaskCollection<T>(policy.GetTimeout(), func);
         }
+        public static TimeoutTaskCollection TaskCollection(
+               this CircuitBreakPolicy policy,
+               Task func)
+        {
+            return new TimeoutTaskCollection(policy.GetTimeout(), func);
+        }
 
         public static TimeoutTaskCollection<T> TaskCollection<T>(
                this CircuitBreakPolicy policy,
@@ -19,6 +25,22 @@ namespace Skewwhiffy.CircuitBreak.Methods
         {
             var tokenSource = new CancellationTokenSource(policy.GetTimeout());
             return policy.TaskCollection(Task.Run(async () => await func(tokenSource.Token), tokenSource.Token));
+        }
+
+        public static TimeoutTaskCollection TaskCollection(
+               this CircuitBreakPolicy policy,
+               Func<CancellationToken, Task> func)
+        {
+            var tokenSource = new CancellationTokenSource(policy.GetTimeout());
+            return policy.TaskCollection(Task.Run(async () => await func(tokenSource.Token), tokenSource.Token));
+        }
+
+        public static TimeoutTaskCollection TaskCollection(
+            this CircuitBreakPolicy policy,
+            Action func)
+        {
+            var tokenSource = new CancellationTokenSource(policy.GetTimeout());
+            return policy.TaskCollection(Task.Run(func, tokenSource.Token));
         }
 
         public static TimeoutTaskCollection<T> TaskCollection<T>(

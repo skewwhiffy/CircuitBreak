@@ -16,7 +16,7 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
         [SetUp]
         public void BeforeEach()
         {
-            _timeout = TimeSpan.FromMilliseconds(100);
+            _timeout = TimeSpan.FromMilliseconds(1000);
             _operationDuration = TimeSpan.FromMilliseconds(10);
             _policy = new CircuitBreakPolicy
             {
@@ -37,10 +37,24 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
         }
 
         [Test]
+        public void WhenSyncMethodWithNoReturnValueTakesLessTimeThanTimeout_ThenMethodExecutes()
+        {
+            var executed = false;
+            var sw = Stopwatch.StartNew();
+            _policy.ApplyTo(() =>
+            {
+                Thread.Sleep(_operationDuration);
+                executed = true;
+            });
+            Assert.That(sw.Elapsed, Is.GreaterThan(_operationDuration));
+            Assert.That(executed, Is.True);
+        }
+
+        [Test]
         public async Task WhenAsyncMethodTakesLessTimeThanTimeout_ThenMethodExecutes()
         {
             var sw = Stopwatch.StartNew();
-            await _policy.ApplyTo(async () =>
+            await _policy.ApplyToAsync(async () =>
             {
                 await Task.Delay(_operationDuration);
                 return true;
@@ -49,14 +63,41 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
         }
 
         [Test]
+        public async Task WhenAsyncMethodWithNoReturnValueTakesLessTimeThanTimeout_ThenMethodExecutes()
+        {
+            var executed = false;
+            var sw = Stopwatch.StartNew();
+            await _policy.ApplyToAsync(async () =>
+            {
+                await Task.Delay(_operationDuration);
+                executed = true;
+            });
+            Assert.That(executed, Is.True);
+            Assert.That(sw.Elapsed, Is.GreaterThan(_operationDuration));
+        }
+
+        [Test]
         public async Task WhenCancellationTokenExists_WhenAsyncMethodTakesLessTimeThanTimeout_ThenMethodExecutes()
         {
             bool? methodCompleted = null;
-            methodCompleted = await _policy.ApplyTo(async t =>
+            await _policy.ApplyToAsync(async t =>
             {
                 methodCompleted = false;
                 await Task.Delay(_operationDuration, t);
                 return methodCompleted = true;
+            });
+            Assert.That(methodCompleted, Is.True);
+        }
+
+        [Test]
+        public async Task WhenCancellationTokenExists_WhenAsyncMethodWithoutReturnValueTakesLessTimeThanTimeout_ThenMethodExecutes()
+        {
+            bool methodCompleted = false;
+            await _policy.ApplyToAsync(async t =>
+            {
+                methodCompleted = false;
+                await Task.Delay(_operationDuration, t);
+                methodCompleted = true;
             });
             Assert.That(methodCompleted, Is.True);
         }

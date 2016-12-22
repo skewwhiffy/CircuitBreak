@@ -17,7 +17,7 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
         public void BeforeEach()
         {
             _timeout = TimeSpan.FromMilliseconds(10);
-            _operationDuration = TimeSpan.FromMilliseconds(100);
+            _operationDuration = TimeSpan.FromMilliseconds(10000);
             _policy = new CircuitBreakPolicy
             {
                 Timeout = _timeout
@@ -44,12 +44,27 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
         }
 
         [Test]
+        public void WhenSyncMethodWithNoReturnValueTakesLongerThanTimeout_ThenMethodThrowsTimeoutExceptionShortlyAfterTimeout()
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                _policy.ApplyTo(() => Thread.Sleep(_operationDuration));
+                Assert.Fail("Expected timeout exception");
+            }
+            catch (TimeoutException)
+            {
+            }
+            Assert.That(sw.Elapsed, Is.LessThan(_operationDuration));
+        }
+
+        [Test]
         public async Task WhenAsyncMethodTakesLongerThanTimeout_ThenMethodThrowsTimeoutExceptionShortlyAfterTimeout()
         {
             var sw = Stopwatch.StartNew();
             try
             {
-                await _policy.ApplyTo(async () =>
+                await _policy.ApplyToAsync(async () =>
                 {
                     await Task.Delay(_operationDuration);
                     return true;
@@ -65,11 +80,13 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
         [Test]
         public async Task WhenCancellationTokenExists_ThenCancellationIsRequestedWhenTimingOut()
         {
+            _timeout = TimeSpan.FromMilliseconds(100);
+            _operationDuration = TimeSpan.FromMilliseconds(300);
             bool? methodCompleted = null;
             var sw = Stopwatch.StartNew();
             try
             {
-                methodCompleted = await _policy.ApplyTo(async t =>
+                methodCompleted = await _policy.ApplyToAsync(async t =>
                 {
                     methodCompleted = false;
                     await Task.Delay(_operationDuration, t);

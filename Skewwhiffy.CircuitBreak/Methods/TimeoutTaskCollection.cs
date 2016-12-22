@@ -4,47 +4,76 @@ using System.Threading.Tasks;
 
 namespace Skewwhiffy.CircuitBreak.Methods
 {
-    public class TimeoutTaskCollection<T>
+    public class TimeoutTaskCollection
     {
-        private readonly TimeSpan _timeout;
-        private readonly Task<T> _func;
-        private readonly CancellationToken _token;
-        private Task _timeoutTask;
+        protected readonly TimeSpan Timeout;
+        protected readonly CancellationToken Token;
         private Task[] _tasks;
 
         public TimeoutTaskCollection(
             TimeSpan timeout,
-            Task<T> func)
+            Task func)
         {
-            _timeout = timeout;
-            _func = func;
-            var tokenSource = new CancellationTokenSource(_timeout);
-            _token = tokenSource.Token;
+            var tokenSource = new CancellationTokenSource(timeout);
+            Timeout = timeout;
+            Func = func;
+            Token = tokenSource.Token;
+            TimeoutTask = Task.Run(async () => await Task.Delay(timeout, tokenSource.Token));
+            Tasks = new[] {TimeoutTask, Func};
         }
+
+        private Task TimeoutTask { get; }
+
+        private Task Func { get; }
 
         public async Task WhenAny()
             => await Task.WhenAny(Tasks);
 
-        public void WaitAny()
+        public int WaitAny()
             => Task.WaitAny(Tasks);
 
-        public T GetResult()
+        public void GetResult()
         {
-            WaitAny();
-            if (_token.IsCancellationRequested || _func.IsFaulted || _func.IsCanceled)
+            Console.WriteLine(WaitAny());
+            if (Func.IsFaulted)
+            {
+                var exception = Func.Exception;
+                if (exception == null)
+                {
+                    throw TimeoutException;
+                }
+                if (exception.InnerException != null)
+                {
+                    throw exception.InnerException;
+                }
+                throw exception;
+            }
+            if (Token.IsCancellationRequested || Func.IsCanceled)
             {
                 throw TimeoutException;
             }
-            return _func.Result;
         }
 
+        private Task[] Tasks { get; }
+
         private TimeoutException TimeoutException
-            => new TimeoutException($"Method call timed out after {_timeout.TotalMilliseconds}ms");
+            => new TimeoutException($"Method call timed out after {Timeout.TotalMilliseconds}ms");
+    }
+    public class TimeoutTaskCollection<T> : TimeoutTaskCollection
+    {
+        private readonly Task<T> _func;
 
-        private Task[] Tasks
-            => _tasks ?? (_tasks = new[] {TimeoutTask, _func});
+        public TimeoutTaskCollection(
+            TimeSpan timeout,
+            Task<T> func) : base(timeout, func)
+        {
+            _func = func;
+        }
 
-        private Task TimeoutTask
-            => _timeoutTask ?? (_timeoutTask = Task.Run(async () => await Task.Delay(_timeout, _token)));
+        public new T GetResult()
+        {
+            base.GetResult();
+            return _func.Result;
+        }
     }
 }

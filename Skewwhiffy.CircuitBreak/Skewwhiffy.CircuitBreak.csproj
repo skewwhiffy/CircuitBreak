@@ -42,10 +42,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CircuitBreakPolicy.cs" />
-    <Compile Include="CircuitBreakPolicyExecutor.cs" />
+    <Compile Include="Methods\CircuitBreakPolicyExecutor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TimeoutTaskCollection.cs" />
-    <Compile Include="TimeoutTaskCollectionInstantiator.cs" />
+    <Compile Include="Methods\TimeoutTaskCollection.cs" />
+    <Compile Include="Methods\TimeoutTaskCollectionInstantiator.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
