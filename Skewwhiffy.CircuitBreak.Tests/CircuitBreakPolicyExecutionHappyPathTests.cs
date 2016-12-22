@@ -15,8 +15,8 @@ namespace Skewwhiffy.CircuitBreak.Tests
         [SetUp]
         public void BeforeEach()
         {
-            _timeout = TimeSpan.FromMilliseconds(500);
-            _operationDuration = TimeSpan.FromMilliseconds(100);
+            _timeout = TimeSpan.FromMilliseconds(100);
+            _operationDuration = TimeSpan.FromMilliseconds(10);
             _policy = new CircuitBreakPolicy
             {
                 Timeout = _timeout
