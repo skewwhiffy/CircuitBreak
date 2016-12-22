@@ -45,7 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CircuitBreakPolicyExecutorTests.cs" />
+    <Compile Include="CircuitBreakPolicyExecutionHappyPathTests.cs" />
+    <Compile Include="CircuitBreakPolicyExecutionTimeoutTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
