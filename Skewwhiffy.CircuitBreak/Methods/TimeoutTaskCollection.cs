@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,7 +9,6 @@ namespace Skewwhiffy.CircuitBreak.Methods
     {
         protected readonly TimeSpan Timeout;
         protected readonly CancellationToken Token;
-        private Task[] _tasks;
 
         public TimeoutTaskCollection(
             TimeSpan timeout,
@@ -16,7 +16,7 @@ namespace Skewwhiffy.CircuitBreak.Methods
         {
             var tokenSource = new CancellationTokenSource(timeout);
             Timeout = timeout;
-            Func = func;
+            Func = Task.Run(() => func);
             Token = tokenSource.Token;
             TimeoutTask = Task.Run(async () => await Task.Delay(timeout, tokenSource.Token));
             Tasks = new[] {TimeoutTask, Func};
@@ -56,9 +56,10 @@ namespace Skewwhiffy.CircuitBreak.Methods
 
         private Task[] Tasks { get; }
 
-        private TimeoutException TimeoutException
+        protected TimeoutException TimeoutException
             => new TimeoutException($"Method call timed out after {Timeout.TotalMilliseconds}ms");
     }
+
     public class TimeoutTaskCollection<T> : TimeoutTaskCollection
     {
         private readonly Task<T> _func;
@@ -73,7 +74,23 @@ namespace Skewwhiffy.CircuitBreak.Methods
         public new T GetResult()
         {
             base.GetResult();
-            return _func.Result;
+            try
+            {
+                return _func.Result;
+            }
+            catch (AggregateException ex)
+            {
+                var exceptions = ex.InnerExceptions.Where(e => !(e is TaskCanceledException)).ToList();
+                if (exceptions.Count != 1)
+                {
+                    throw TimeoutException;
+                }
+                throw exceptions.Single();
+            }
+            catch (TaskCanceledException)
+            {
+                throw TimeoutException;
+            }
         }
     }
 }
