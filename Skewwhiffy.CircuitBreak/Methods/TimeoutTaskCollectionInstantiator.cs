@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Skewwhiffy.CircuitBreak.BreakCache;
 
 namespace Skewwhiffy.CircuitBreak.Methods
 {
@@ -10,13 +11,13 @@ namespace Skewwhiffy.CircuitBreak.Methods
                this CircuitBreakPolicy policy,
                Task<T> func)
         {
-            return new TimeoutTaskCollection<T>(policy.GetTimeout(), func);
+            return new TimeoutTaskCollection<T>(policy, func);
         }
         public static TimeoutTaskCollection TaskCollection(
                this CircuitBreakPolicy policy,
                Task func)
         {
-            return new TimeoutTaskCollection(policy.GetTimeout(), func);
+            return new TimeoutTaskCollection(policy, func);
         }
 
         public static TimeoutTaskCollection<T> TaskCollection<T>(
@@ -51,7 +52,19 @@ namespace Skewwhiffy.CircuitBreak.Methods
             return policy.TaskCollection(Task.Run(func, tokenSource.Token));
         }
 
-        private static TimeSpan GetTimeout(this CircuitBreakPolicy policy)
+        public static TimeoutException GetTimeoutException(this TimeSpan timeout)
+            => new TimeoutException($"Method call timed out after {timeout.TotalMilliseconds}ms");
+
+        public static void CheckForCircuitBreak(this CircuitBreakPolicy policy)
+        {
+            var circuitBreakCache = CircuitBreakCache.Singleton;
+            if (circuitBreakCache.ShouldTimeoutImmediately(policy, DateTime.UtcNow))
+            {
+                throw policy.GetTimeout().GetTimeoutException();
+            }
+        }
+
+        public static TimeSpan GetTimeout(this CircuitBreakPolicy policy)
         {
             if (!policy.Timeout.HasValue)
             {
