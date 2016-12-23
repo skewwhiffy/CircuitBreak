@@ -12,7 +12,7 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
         private CircuitBreakPolicy _policy;
         private const int BreakAfter = 5;
         private readonly TimeSpan _reconnectAfter = TimeSpan.FromMilliseconds(50);
-        private readonly TimeSpan _operationLength = TimeSpan.FromMilliseconds(1000);
+        private readonly TimeSpan _operationLength = TimeSpan.FromMilliseconds(10000);
         private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(10);
 
         [SetUp]
