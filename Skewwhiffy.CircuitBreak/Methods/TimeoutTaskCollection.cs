@@ -2,18 +2,23 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Skewwhiffy.CircuitBreak.BreakCache;
 
 namespace Skewwhiffy.CircuitBreak.Methods
 {
     public class TimeoutTaskCollection
     {
+        private readonly CircuitBreakPolicy _policy;
         protected readonly TimeSpan Timeout;
         protected readonly CancellationToken Token;
 
         public TimeoutTaskCollection(
-            TimeSpan timeout,
+            CircuitBreakPolicy policy,
             Task func)
         {
+            policy.CheckForCircuitBreak();
+            _policy = policy;
+            var timeout = policy.GetTimeout();
             var tokenSource = new CancellationTokenSource(timeout);
             Timeout = timeout;
             Func = Task.Run(() => func);
@@ -34,13 +39,13 @@ namespace Skewwhiffy.CircuitBreak.Methods
 
         public void GetResult()
         {
-            Console.WriteLine(WaitAny());
+            WaitAny();
             if (Func.IsFaulted)
             {
                 var exception = Func.Exception;
                 if (exception == null)
                 {
-                    throw TimeoutException;
+                    throw Timeout.GetTimeoutException();
                 }
                 if (exception.InnerException != null)
                 {
@@ -48,16 +53,14 @@ namespace Skewwhiffy.CircuitBreak.Methods
                 }
                 throw exception;
             }
-            if (Token.IsCancellationRequested || Func.IsCanceled)
+            if (TimeoutTask.IsCompleted)
             {
-                throw TimeoutException;
+                CircuitBreakCache.Singleton.RecordTimeout(_policy, DateTime.UtcNow);
+                throw Timeout.GetTimeoutException();
             }
         }
 
         private Task[] Tasks { get; }
-
-        protected TimeoutException TimeoutException
-            => new TimeoutException($"Method call timed out after {Timeout.TotalMilliseconds}ms");
     }
 
     public class TimeoutTaskCollection<T> : TimeoutTaskCollection
@@ -65,8 +68,8 @@ namespace Skewwhiffy.CircuitBreak.Methods
         private readonly Task<T> _func;
 
         public TimeoutTaskCollection(
-            TimeSpan timeout,
-            Task<T> func) : base(timeout, func)
+            CircuitBreakPolicy policy,
+            Task<T> func) : base(policy, func)
         {
             _func = func;
         }
@@ -83,13 +86,13 @@ namespace Skewwhiffy.CircuitBreak.Methods
                 var exceptions = ex.InnerExceptions.Where(e => !(e is TaskCanceledException)).ToList();
                 if (exceptions.Count != 1)
                 {
-                    throw TimeoutException;
+                    throw Timeout.GetTimeoutException();
                 }
                 throw exceptions.Single();
             }
             catch (TaskCanceledException)
             {
-                throw TimeoutException;
+                throw Timeout.GetTimeoutException();
             }
         }
     }
