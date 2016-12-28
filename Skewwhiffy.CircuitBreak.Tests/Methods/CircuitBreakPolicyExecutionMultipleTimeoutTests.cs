@@ -4,12 +4,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Skewwhiffy.CircuitBreak.Methods;
+using Skewwhiffy.CircuitBreak.Policy;
 
 namespace Skewwhiffy.CircuitBreak.Tests.Methods
 {
     public class CircuitBreakPolicyExecutionMultipleTimeoutTests
     {
-        private CircuitBreakPolicy _policy;
+        private ICircuitBreakPolicy _policy;
         private const int BreakAfter = 5;
         private readonly TimeSpan _reconnectAfter = TimeSpan.FromMilliseconds(50);
         private readonly TimeSpan _operationLength = TimeSpan.FromMilliseconds(10000);
@@ -18,12 +19,10 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
         [SetUp]
         public void BeforeEach()
         {
-            _policy = new CircuitBreakPolicy
-            {
-                Timeout = _timeout,
-                BreakAfter = BreakAfter,
-                ReconnectAfter = _reconnectAfter
-            };
+            _policy = ACircuitBreakPolicy
+                .WithTimeout(_timeout)
+                .CircuitBreakAfterAttempts(BreakAfter)
+                .ReconnectAfter(_reconnectAfter);
         }
 
         [Test]
@@ -85,7 +84,6 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
             var finalSw = Stopwatch.StartNew();
             try
             {
-                _policy.Flag = "HELLO";
                 _policy.ApplyTo(() => Thread.Sleep(_operationLength));
                 Assert.Fail("Expected timeout exception");
             }

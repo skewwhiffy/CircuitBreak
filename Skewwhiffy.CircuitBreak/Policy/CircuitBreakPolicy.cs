@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace Skewwhiffy.CircuitBreak
+namespace Skewwhiffy.CircuitBreak.Policy
 {
-    public class CircuitBreakPolicy
+    public class CircuitBreakPolicy : ICircuitBreakPolicyBuilder
     {
         private string _id;
 
@@ -21,8 +21,6 @@ namespace Skewwhiffy.CircuitBreak
 
         public TimeSpan? Timeout { get; set; }
         public int? BreakAfter { get; set; }
-        public TimeSpan? ReconnectAfter { get; set; }
-
-        public string Flag { get; set; }
+        public TimeSpan? CircuitBreakTimeout { get; set; }
     }
 }

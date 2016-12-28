@@ -70,7 +70,9 @@
     <Compile Include="Methods\CircuitBreakPolicyExecutionMultipleTimeoutTests.cs" />
     <Compile Include="Methods\CircuitBreakPolicyExecutionTimeoutTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WebApi\CircuitBreakPolicyImpl.cs" />
     <Compile Include="WebApi\QuickResponseTests.cs" />
+    <Compile Include="WebApi\SlowResponseConfigImpl.cs" />
     <Compile Include="WebApi\SlowResponseTests.cs" />
   </ItemGroup>
   <ItemGroup>

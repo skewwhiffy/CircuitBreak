@@ -24,18 +24,4 @@
   <UseCPUArchitecture>AutoDetect</UseCPUArchitecture>
   <MSTestThreadApartmentState>STA</MSTestThreadApartmentState>
   <BuildProcessArchitecture>x86</BuildProcessArchitecture>
-  <IgnoredTests>
-    <FixtureTestSelector>
-      <FixtureName>Skewwhiffy.CircuitBreak.Tests.Methods.CircuitBreakPolicyExecutionTimeoutTests</FixtureName>
-    </FixtureTestSelector>
-    <FixtureTestSelector>
-      <FixtureName>Skewwhiffy.CircuitBreak.Tests.Methods.CircuitBreakPolicyExecutionMultipleTimeoutTests</FixtureName>
-    </FixtureTestSelector>
-    <FixtureTestSelector>
-      <FixtureName>Skewwhiffy.CircuitBreak.Tests.Methods.CircuitBreakPolicyExecutionHappyPathTests</FixtureName>
-    </FixtureTestSelector>
-    <FixtureTestSelector>
-      <FixtureName>Skewwhiffy.CircuitBreak.Tests.Methods.CircuitBreakPolicyExecutionExceptionTests</FixtureName>
-    </FixtureTestSelector>
-  </IgnoredTests>
 </ProjectConfiguration>

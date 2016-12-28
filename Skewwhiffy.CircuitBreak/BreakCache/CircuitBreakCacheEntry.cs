@@ -1,4 +1,5 @@
 ﻿using System;
+using Skewwhiffy.CircuitBreak.Policy;
 
 namespace Skewwhiffy.CircuitBreak.BreakCache
 {
@@ -28,7 +29,7 @@ namespace Skewwhiffy.CircuitBreak.BreakCache
             }
         }
 
-        public bool ShouldTimeoutImmediately(CircuitBreakPolicy policy, DateTime now)
+        public bool ShouldTimeoutImmediately(ICircuitBreakPolicy policy, DateTime now)
         {
             if (!policy.BreakAfter.HasValue)
             {
@@ -37,8 +38,8 @@ namespace Skewwhiffy.CircuitBreak.BreakCache
             if (Count > policy.BreakAfter.Value)
             {
                 if (_lastTimeout.HasValue
-                    && policy.ReconnectAfter.HasValue
-                    && _lastTimeout.Value.Add(policy.ReconnectAfter.Value) < now)
+                    && policy.CircuitBreakTimeout.HasValue
+                    && _lastTimeout.Value.Add(policy.CircuitBreakTimeout.Value) < now)
                 {
                     ResetCount();
                     return false;

@@ -2,6 +2,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http;
+using Skewwhiffy.CircuitBreak.Methods;
+using Skewwhiffy.CircuitBreak.Policy;
 
 namespace Skewwhiffy.CircuitBreak.WebApi.ExampleSite
 {
@@ -23,21 +25,32 @@ namespace Skewwhiffy.CircuitBreak.WebApi.ExampleSite
         [Route("async")]
         public async Task<SlowResponseConfig> GetConfigSlowAsync()
         {
-            Thread.Sleep(Config.OperationDuration);
+            await Task.Delay(Config.OperationDuration);
             return Config;
         }
 
         [Route("sync/withtimeout")]
-        [TimeoutMilliseconds(50)]
         public SlowResponseConfig GetConfigSlowSyncWithShortTimeout()
         {
-            Thread.Sleep(Config.OperationDuration);
-            return Config;
+            return Config
+                .Policy
+                .ApplyToWeb(GetConfigSlowSync);
+        }
+
+        [Route("async/withtimeout")]
+        public async Task<SlowResponseConfig> GetConfigSlowAsyncWithShortTimeout()
+        {
+            return await Config
+                .Policy
+                .ApplyToWebAsync(GetConfigSlowAsync);
         }
 
         private SlowResponseConfig Config => new SlowResponseConfig
         {
-            OperationDuration = _operationDuration
+            OperationDuration = _operationDuration,
+            Policy = ACircuitBreakPolicyForWebApi
+                .WithTimeout(TimeSpan.FromMilliseconds(50))
+                .CircuitBreakAfterAttempts(5)
         };
     }
 }

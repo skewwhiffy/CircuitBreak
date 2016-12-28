@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Http;
+using Skewwhiffy.CircuitBreak.Policy;
 
 namespace Skewwhiffy.CircuitBreak.Methods
 {
@@ -8,7 +11,7 @@ namespace Skewwhiffy.CircuitBreak.Methods
     {
         #region Method with no return value
 
-        public static void ApplyTo(this CircuitBreakPolicy policy, Action func)
+        public static void ApplyTo(this ICircuitBreakPolicy policy, Action func)
         {
             if (!policy.Timeout.HasValue)
             {
@@ -18,12 +21,12 @@ namespace Skewwhiffy.CircuitBreak.Methods
             policy.TaskCollection(func).GetResult();
         }
 
-        public static async Task ApplyToAsync(this CircuitBreakPolicy policy, Func<Task> func)
+        public static async Task ApplyToAsync(this ICircuitBreakPolicy policy, Func<Task> func)
         {
             await policy.ApplyToAsync(t => func());
         }
 
-        public static async Task ApplyToAsync(this CircuitBreakPolicy policy, Func<CancellationToken, Task> func)
+        public static async Task ApplyToAsync(this ICircuitBreakPolicy policy, Func<CancellationToken, Task> func)
         {
             Func<CancellationToken, Task<bool>> funcWithDummyReturnValue = async t =>
             {
@@ -37,25 +40,40 @@ namespace Skewwhiffy.CircuitBreak.Methods
 
         #region Method with return value
 
-        public static T ApplyTo<T>(this CircuitBreakPolicy policy, Func<T> func)
+        public static T ApplyTo<T>(this ICircuitBreakPolicy policy, Func<T> func, Action onTimeout = null)
         {
-            return !policy.Timeout.HasValue ? func() : policy.TaskCollection(func).GetResult();
+            return !policy.Timeout.HasValue ? func() : policy.TaskCollection(func).GetResult(onTimeout);
         }
 
-        public static async Task<T> ApplyToAsync<T>(this CircuitBreakPolicy policy, Func<Task<T>> func)
+        public static T ApplyToWeb<T>(this ICircuitBreakPolicy policy, Func<T> func)
         {
-            return await policy.ApplyToAsync(t => func());
+            return policy.ApplyTo(func, ThrowWebTimeout);
         }
 
-        public static async Task<T> ApplyToAsync<T>(this CircuitBreakPolicy policy, Func<CancellationToken, Task<T>> func)
+        public static async Task<T> ApplyToAsync<T>(this ICircuitBreakPolicy policy, Func<Task<T>> func, Action onTimeout = null)
+        {
+            return await policy.ApplyToAsync(t => func(), onTimeout);
+        }
+
+        public static async Task<T> ApplyToWebAsync<T>(this ICircuitBreakPolicy policy, Func<Task<T>> func)
+        {
+            return await policy.ApplyToAsync(t => func(), ThrowWebTimeout);
+        }
+
+        public static async Task<T> ApplyToAsync<T>(this ICircuitBreakPolicy policy, Func<CancellationToken, Task<T>> func, Action onTimeout = null)
         {
             if (!policy.Timeout.HasValue)
             {
                 return await func(default(CancellationToken));
             }
-            return policy.TaskCollection(func).GetResult();
+            return policy.TaskCollection(func).GetResult(onTimeout);
         }
 
         #endregion
+
+        private static void ThrowWebTimeout()
+        {
+            throw new HttpResponseException(HttpStatusCode.RequestTimeout);
+        }
     }
 }

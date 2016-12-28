@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using Skewwhiffy.CircuitBreak.Policy;
 
 namespace Skewwhiffy.CircuitBreak.BreakCache
 {
@@ -14,7 +15,7 @@ namespace Skewwhiffy.CircuitBreak.BreakCache
             _cache = new ConcurrentDictionary<string, CircuitBreakCacheEntry>();
         }
 
-        public bool ShouldTimeoutImmediately(CircuitBreakPolicy policy, DateTime now)
+        public bool ShouldTimeoutImmediately(ICircuitBreakPolicy policy, DateTime now)
         {
             if (!policy.BreakAfter.HasValue)
             {
@@ -23,7 +24,7 @@ namespace Skewwhiffy.CircuitBreak.BreakCache
             return _cache.GetOrAdd(policy.Id, id => new CircuitBreakCacheEntry()).ShouldTimeoutImmediately(policy, now);
         }
 
-        public void RecordTimeout(CircuitBreakPolicy policy, DateTime now)
+        public void RecordTimeout(ICircuitBreakPolicy policy, DateTime now)
         {
             if (!policy.BreakAfter.HasValue)
             {

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Skewwhiffy.CircuitBreak.Methods;
+using Skewwhiffy.CircuitBreak.Policy;
 
 namespace Skewwhiffy.CircuitBreak.Tests.Methods
 {
@@ -11,17 +12,14 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
     {
         private TimeSpan _timeout;
         private TimeSpan _operationDuration;
-        private CircuitBreakPolicy _policy;
+        private ICircuitBreakPolicy _policy;
 
         [SetUp]
         public void BeforeEach()
         {
             _timeout = TimeSpan.FromMilliseconds(1000);
             _operationDuration = TimeSpan.FromMilliseconds(10);
-            _policy = new CircuitBreakPolicy
-            {
-                Timeout = _timeout
-            };
+            _policy = ACircuitBreakPolicy.WithTimeout(_timeout);
         }
 
         [Test]

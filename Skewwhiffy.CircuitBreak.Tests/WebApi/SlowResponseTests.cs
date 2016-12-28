@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Owin.Testing;
 using Newtonsoft.Json;
@@ -15,7 +12,7 @@ namespace Skewwhiffy.CircuitBreak.Tests.WebApi
 {
     public class SlowResponseTests
     {
-        private TimeSpan _operationDuration;
+        private SlowResponseConfigImpl _config;
 
         [OneTimeSetUp]
         public async Task BeforeAll()
@@ -23,52 +20,60 @@ namespace Skewwhiffy.CircuitBreak.Tests.WebApi
             using (var server = TestServer.Create<Startup>())
             using (var client = server.HttpClient)
             {
-                var response = await "/slowresponse/config"
+                _config = await "/slowresponse/config"
                     .PipeAsync(client.GetAsync)
                     .PipeAsync(async r => await r.Content.ReadAsStringAsync())
-                    .Pipe(JsonConvert.DeserializeObject<SlowResponseConfig>);
-                _operationDuration = response.OperationDuration;
+                    .Pipe(JsonConvert.DeserializeObject<SlowResponseConfigImpl>);
             }
         }
 
-        [Test]
-        public async Task When_InvokingSlowResponseSync_Then_ResponseIsReceivedInGoodTime()
+        [TestCase("slowresponse/sync")]
+        [TestCase("slowresponse/async")]
+        public async Task When_InvokingSlowResponse_Then_ResponseIsReceivedInGoodTime(string endpoint)
         {
             using (var server = TestServer.Create<Startup>())
             using (var client = server.HttpClient)
             {
                 var sw = Stopwatch.StartNew();
-                var response = await client.GetAsync("/slowresponse/sync");
+                var response = await client.GetAsync(endpoint);
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(sw.Elapsed > _operationDuration);
+                Assert.That(sw.Elapsed > _config.OperationDuration);
             }
         }
 
-        [Test]
-        public async Task When_InvokingSlowResponseAsync_Then_ResponseIsReceivedInGoodTime()
+        [TestCase("slowresponse/sync/withtimeout")]
+        [TestCase("slowresponse/async/withtimeout")]
+        public async Task When_InvokingSlowResponseWithTimeout_Then_ResponseIsTimeout(string endpoint)
         {
             using (var server = TestServer.Create<Startup>())
             using (var client = server.HttpClient)
             {
                 var sw = Stopwatch.StartNew();
-                var response = await client.GetAsync("/slowresponse/async");
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-                Assert.That(sw.Elapsed > _operationDuration);
-            }
-        }
-
-        [Test]
-        public async Task When_InvokingSlowResponseSyncWithTimeout_Then_ResponseIsTimeout()
-        {
-            using (var server = TestServer.Create<Startup>())
-            using (var client = server.HttpClient)
-            {
-                var sw = Stopwatch.StartNew();
-                var response = await client.GetAsync("/slowresponse/sync/withtimeout");
-                var responseBody = await response.Content.ReadAsStringAsync();
-                Console.WriteLine(responseBody);
-                Console.WriteLine($"That took {sw.ElapsedMilliseconds}ms");
+                var response = await client.GetAsync(endpoint);
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestTimeout));
+                Assert.That(sw.Elapsed < _config.OperationDuration);
+            }
+        }
+
+        [TestCase("slowresponse/sync/withtimeout")]
+        [TestCase("slowresponse/async/withtimeout")]
+        public async Task When_InvokingSlowResponseWithTimeoutMultipleTimes_Then_CircuitBreaks(string endpoint)
+        {
+            Assert.That(_config.Policy.BreakAfter.HasValue);
+            Assert.That(_config.Policy.Timeout.HasValue);
+            using (var server = TestServer.Create<Startup>())
+            using (var client = server.HttpClient)
+            {
+                for (var i = 0; i < _config.Policy.BreakAfter.Value + 5; i++)
+                {
+                    var sw = Stopwatch.StartNew();
+                    var response = await client.GetAsync(endpoint);
+                    if (i > _config.Policy.BreakAfter.Value)
+                    {
+                        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestTimeout));
+                        Assert.That(sw.Elapsed < _config.Policy.Timeout.Value);
+                    }
+                }
             }
         }
     }
