@@ -7,7 +7,7 @@ namespace Skewwhiffy.CircuitBreak.Tests.WebApi
     {
         public string Id { get; set; }
         public TimeSpan? Timeout { get; set; }
-        public int? BreakAfter { get; set; }
+        public int? CircuitBreakCount { get; set; }
         public TimeSpan? CircuitBreakTimeout { get; set; }
     }
 }

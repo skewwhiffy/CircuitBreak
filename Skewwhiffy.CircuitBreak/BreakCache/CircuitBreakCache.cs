@@ -17,7 +17,7 @@ namespace Skewwhiffy.CircuitBreak.BreakCache
 
         public bool ShouldTimeoutImmediately(ICircuitBreakPolicy policy, DateTime now)
         {
-            if (!policy.BreakAfter.HasValue)
+            if (!policy.CircuitBreakCount.HasValue)
             {
                 return false;
             }
@@ -26,7 +26,7 @@ namespace Skewwhiffy.CircuitBreak.BreakCache
 
         public void RecordTimeout(ICircuitBreakPolicy policy, DateTime now)
         {
-            if (!policy.BreakAfter.HasValue)
+            if (!policy.CircuitBreakCount.HasValue)
             {
                 return;
             }

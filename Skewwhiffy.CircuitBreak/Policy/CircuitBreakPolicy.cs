@@ -2,7 +2,7 @@
 
 namespace Skewwhiffy.CircuitBreak.Policy
 {
-    public class CircuitBreakPolicy : ICircuitBreakPolicyBuilder
+    public class CircuitBreakPolicy : ICircuitBreakPolicy
     {
         private string _id;
 
@@ -20,7 +20,7 @@ namespace Skewwhiffy.CircuitBreak.Policy
         }
 
         public TimeSpan? Timeout { get; set; }
-        public int? BreakAfter { get; set; }
+        public int? CircuitBreakCount { get; set; }
         public TimeSpan? CircuitBreakTimeout { get; set; }
     }
 }

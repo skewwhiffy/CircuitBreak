@@ -6,7 +6,7 @@ namespace Skewwhiffy.CircuitBreak.Policy
     {
         string Id { get; }
         TimeSpan? Timeout { get; }
-        int? BreakAfter { get; }
+        int? CircuitBreakCount { get; }
         TimeSpan? CircuitBreakTimeout { get; }
 
     }

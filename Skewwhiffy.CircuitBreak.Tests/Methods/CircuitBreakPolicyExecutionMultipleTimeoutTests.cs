@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using Skewwhiffy.CircuitBreak.Methods;
 using Skewwhiffy.CircuitBreak.Policy;
+using Skewwhiffy.CircuitBreak.Policy.Fluent;
 
 namespace Skewwhiffy.CircuitBreak.Tests.Methods
 {

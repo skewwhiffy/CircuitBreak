@@ -12,12 +12,15 @@ namespace Skewwhiffy.CircuitBreak.Methods
         private readonly ICircuitBreakPolicy _policy;
         protected readonly TimeSpan Timeout;
         protected readonly CancellationToken Token;
+        protected readonly Action OnTimeout;
 
         public TimeoutTaskCollection(
             ICircuitBreakPolicy policy,
-            Task func)
+            Task func,
+            Action onTimeout)
         {
-            policy.CheckForCircuitBreak();
+            OnTimeout = onTimeout;
+            policy.CheckForCircuitBreak(onTimeout);
             _policy = policy;
             var timeout = policy.GetTimeout();
             var tokenSource = new CancellationTokenSource(timeout);
@@ -38,7 +41,7 @@ namespace Skewwhiffy.CircuitBreak.Methods
         public int WaitAny()
             => Task.WaitAny(Tasks);
 
-        public void GetResult(Action onTimeout = null)
+        public void GetResult()
         {
             WaitAny();
             if (Func.IsFaulted)
@@ -46,7 +49,7 @@ namespace Skewwhiffy.CircuitBreak.Methods
                 var exception = Func.Exception;
                 if (exception == null)
                 {
-                    throw Timeout.GetTimeoutException(onTimeout);
+                    throw Timeout.GetTimeoutException(OnTimeout);
                 }
                 if (exception.InnerException != null)
                 {
@@ -57,7 +60,7 @@ namespace Skewwhiffy.CircuitBreak.Methods
             if (TimeoutTask.IsCompleted)
             {
                 CircuitBreakCache.Singleton.RecordTimeout(_policy, DateTime.UtcNow);
-                throw Timeout.GetTimeoutException(onTimeout);
+                throw Timeout.GetTimeoutException(OnTimeout);
             }
         }
 
@@ -70,14 +73,15 @@ namespace Skewwhiffy.CircuitBreak.Methods
 
         public TimeoutTaskCollection(
             ICircuitBreakPolicy policy,
-            Task<T> func) : base(policy, func)
+            Task<T> func,
+            Action onTimeout) : base(policy, func, onTimeout)
         {
             _func = func;
         }
 
-        public new T GetResult(Action onTimeout = null)
+        public new T GetResult()
         {
-            base.GetResult(onTimeout);
+            base.GetResult();
             try
             {
                 return _func.Result;
@@ -87,13 +91,13 @@ namespace Skewwhiffy.CircuitBreak.Methods
                 var exceptions = ex.InnerExceptions.Where(e => !(e is TaskCanceledException)).ToList();
                 if (exceptions.Count != 1)
                 {
-                    throw Timeout.GetTimeoutException(onTimeout);
+                    throw Timeout.GetTimeoutException(OnTimeout);
                 }
                 throw exceptions.Single();
             }
             catch (TaskCanceledException)
             {
-                throw Timeout.GetTimeoutException(onTimeout);
+                throw Timeout.GetTimeoutException(OnTimeout);
             }
         }
     }

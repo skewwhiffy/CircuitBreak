@@ -10,61 +10,67 @@ namespace Skewwhiffy.CircuitBreak.Methods
     {
         public static TimeoutTaskCollection<T> TaskCollection<T>(
                this ICircuitBreakPolicy policy,
-               Task<T> func)
+               Task<T> func,
+               Action onTimeout)
         {
-            return new TimeoutTaskCollection<T>(policy, func);
+            return new TimeoutTaskCollection<T>(policy, func, onTimeout);
         }
         public static TimeoutTaskCollection TaskCollection(
                this ICircuitBreakPolicy policy,
-               Task func)
+               Task func,
+               Action onTimeout)
         {
-            return new TimeoutTaskCollection(policy, func);
+            return new TimeoutTaskCollection(policy, func, onTimeout);
         }
 
         public static TimeoutTaskCollection<T> TaskCollection<T>(
                this ICircuitBreakPolicy policy,
-               Func<CancellationToken, Task<T>> func)
+               Func<CancellationToken, Task<T>> func,
+               Action onTimeout)
         {
             var tokenSource = new CancellationTokenSource(policy.GetTimeout());
-            return policy.TaskCollection(Task.Run(async () => await func(tokenSource.Token), tokenSource.Token));
+            return policy.TaskCollection(Task.Run(async () => await func(tokenSource.Token), tokenSource.Token), onTimeout);
         }
 
         public static TimeoutTaskCollection TaskCollection(
                this ICircuitBreakPolicy policy,
-               Func<CancellationToken, Task> func)
+               Func<CancellationToken, Task> func,
+               Action onTimeout)
         {
             var tokenSource = new CancellationTokenSource(policy.GetTimeout());
-            return policy.TaskCollection(Task.Run(async () => await func(tokenSource.Token), tokenSource.Token));
+            return policy.TaskCollection(Task.Run(async () => await func(tokenSource.Token), tokenSource.Token), onTimeout);
         }
 
         public static TimeoutTaskCollection TaskCollection(
             this ICircuitBreakPolicy policy,
-            Action func)
+            Action func,
+            Action onTimeout)
         {
             var tokenSource = new CancellationTokenSource(policy.GetTimeout());
-            return policy.TaskCollection(Task.Run(func, tokenSource.Token));
+            return policy.TaskCollection(Task.Run(func, tokenSource.Token), onTimeout);
         }
 
         public static TimeoutTaskCollection<T> TaskCollection<T>(
             this ICircuitBreakPolicy policy,
-            Func<T> func)
+            Func<T> func,
+            Action onTimeout)
         {
             var tokenSource = new CancellationTokenSource(policy.GetTimeout());
-            return policy.TaskCollection(Task.Run(func, tokenSource.Token));
+            return policy.TaskCollection(Task.Run(func, tokenSource.Token), onTimeout);
         }
 
-        public static TimeoutException GetTimeoutException(this TimeSpan timeout, Action onTimeout = null)
+        public static TimeoutException GetTimeoutException(this TimeSpan timeout, Action onTimeout)
         {
             onTimeout?.Invoke();
             return new TimeoutException($"Method call timed out after {timeout.TotalMilliseconds}ms");
         }
 
-        public static void CheckForCircuitBreak(this ICircuitBreakPolicy policy)
+        public static void CheckForCircuitBreak(this ICircuitBreakPolicy policy, Action onTimeout)
         {
             var circuitBreakCache = CircuitBreakCache.Singleton;
             if (circuitBreakCache.ShouldTimeoutImmediately(policy, DateTime.UtcNow))
             {
-                throw policy.GetTimeout().GetTimeoutException();
+                throw policy.GetTimeout().GetTimeoutException(onTimeout);
             }
         }
 

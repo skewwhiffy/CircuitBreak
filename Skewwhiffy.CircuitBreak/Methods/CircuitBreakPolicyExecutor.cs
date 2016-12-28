@@ -11,14 +11,14 @@ namespace Skewwhiffy.CircuitBreak.Methods
     {
         #region Method with no return value
 
-        public static void ApplyTo(this ICircuitBreakPolicy policy, Action func)
+        public static void ApplyTo(this ICircuitBreakPolicy policy, Action func, Action onTimeout = null)
         {
             if (!policy.Timeout.HasValue)
             {
                 func();
                 return;
             }
-            policy.TaskCollection(func).GetResult();
+            policy.TaskCollection(func, onTimeout).GetResult();
         }
 
         public static async Task ApplyToAsync(this ICircuitBreakPolicy policy, Func<Task> func)
@@ -42,7 +42,7 @@ namespace Skewwhiffy.CircuitBreak.Methods
 
         public static T ApplyTo<T>(this ICircuitBreakPolicy policy, Func<T> func, Action onTimeout = null)
         {
-            return !policy.Timeout.HasValue ? func() : policy.TaskCollection(func).GetResult(onTimeout);
+            return !policy.Timeout.HasValue ? func() : policy.TaskCollection(func, onTimeout).GetResult();
         }
 
         public static T ApplyToWeb<T>(this ICircuitBreakPolicy policy, Func<T> func)
@@ -66,7 +66,7 @@ namespace Skewwhiffy.CircuitBreak.Methods
             {
                 return await func(default(CancellationToken));
             }
-            return policy.TaskCollection(func).GetResult(onTimeout);
+            return policy.TaskCollection(func, onTimeout).GetResult();
         }
 
         #endregion

@@ -31,11 +31,11 @@ namespace Skewwhiffy.CircuitBreak.BreakCache
 
         public bool ShouldTimeoutImmediately(ICircuitBreakPolicy policy, DateTime now)
         {
-            if (!policy.BreakAfter.HasValue)
+            if (!policy.CircuitBreakCount.HasValue)
             {
                 return false;
             }
-            if (Count > policy.BreakAfter.Value)
+            if (Count > policy.CircuitBreakCount.Value)
             {
                 if (_lastTimeout.HasValue
                     && policy.CircuitBreakTimeout.HasValue

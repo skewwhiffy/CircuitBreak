@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Owin.Testing;
@@ -57,23 +56,30 @@ namespace Skewwhiffy.CircuitBreak.Tests.WebApi
 
         [TestCase("slowresponse/sync/withtimeout")]
         [TestCase("slowresponse/async/withtimeout")]
-        public async Task When_InvokingSlowResponseWithTimeoutMultipleTimes_Then_CircuitBreaks(string endpoint)
+        public async Task When_InvokingSlowResponseThatHasCircuitBroken_Then_CircuitReconnects(string endpoint)
         {
-            Assert.That(_config.Policy.BreakAfter.HasValue);
+            Assert.That(_config.Policy.CircuitBreakCount.HasValue);
             Assert.That(_config.Policy.Timeout.HasValue);
+            Assert.That(_config.Policy.CircuitBreakTimeout.HasValue);
             using (var server = TestServer.Create<Startup>())
             using (var client = server.HttpClient)
             {
-                for (var i = 0; i < _config.Policy.BreakAfter.Value + 5; i++)
+                for (var i = 0; i < _config.Policy.CircuitBreakCount.Value + 2; i++)
                 {
                     var sw = Stopwatch.StartNew();
                     var response = await client.GetAsync(endpoint);
-                    if (i > _config.Policy.BreakAfter.Value)
+                    if (i > _config.Policy.CircuitBreakCount.Value)
                     {
                         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.RequestTimeout));
                         Assert.That(sw.Elapsed < _config.Policy.Timeout.Value);
                     }
                 }
+
+                await Task.Delay(_config.Policy.CircuitBreakTimeout.Value);
+                var reconnectedSw = Stopwatch.StartNew();
+                var reconnectedResponse = await client.GetAsync(endpoint);
+                Assert.That(reconnectedResponse.StatusCode, Is.EqualTo(HttpStatusCode.RequestTimeout));
+                Assert.That(reconnectedSw.Elapsed > _config.Policy.Timeout.Value);
             }
         }
     }

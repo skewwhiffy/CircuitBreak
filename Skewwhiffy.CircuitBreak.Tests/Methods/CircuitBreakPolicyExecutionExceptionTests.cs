@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using Skewwhiffy.CircuitBreak.Methods;
 using Skewwhiffy.CircuitBreak.Policy;
+using Skewwhiffy.CircuitBreak.Policy.Fluent;
 
 namespace Skewwhiffy.CircuitBreak.Tests.Methods
 {
@@ -19,7 +20,7 @@ namespace Skewwhiffy.CircuitBreak.Tests.Methods
         {
             _timeout = TimeSpan.FromMilliseconds(1000);
             _operationDuration = TimeSpan.FromMilliseconds(10);
-            _policy = ACircuitBreakPolicy.WithTimeout(_timeout);
+            _policy = ACircuitBreakPolicy.WithTimeout(_timeout).WithoutCircuitBreak();
         }
 
         [Test]
