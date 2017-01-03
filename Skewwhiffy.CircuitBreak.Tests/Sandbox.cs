@@ -23,7 +23,7 @@ namespace Skewwhiffy.CircuitBreak.Tests
             var sw = Stopwatch.StartNew();
             await Task.Delay(TimeSpan.FromSeconds(6));
             sw.Stop();
-            Console.Write($"{sw.Elapsed}");
+            Assert.That(sw.Elapsed, Is.GreaterThanOrEqualTo(TimeSpan.FromSeconds(6)));
         }
     }
 }
